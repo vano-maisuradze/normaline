@@ -7,8 +7,4 @@
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.2.1" />
-  </ItemGroup>
-
 </Project>

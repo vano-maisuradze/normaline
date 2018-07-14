@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
-using CommandLine;
 
 namespace Normalize
 {
@@ -11,20 +8,42 @@ namespace Normalize
     {
         static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(opts => RunOptionsAndReturnExitCode(opts))
-                .WithNotParsed((errs) => HandleParseError(errs));
-        }
-
-        private static void HandleParseError(IEnumerable<Error> errs)
-        {
-            foreach (var error in errs)
+            var options = ParseArgs(args);
+            if (options == null)
             {
-                Console.WriteLine(error.Tag);
+                ConsoleMessage.WriteError("Invalid arguments!");
+                return;
             }
+            NormalizeLineEndings(options);
         }
 
-        private static void RunOptionsAndReturnExitCode(Options opts)
+        private static Options ParseArgs(string[] args)
+        {
+            if (args == null || args.Length != 4)
+            {
+                return null;
+            }
+
+            var options = new Options();
+            for (int i = 0; i < args.Length; i += 2)
+            {
+                if (args[i].ToLower() == "-p" || args[i].ToLower() == "--path")
+                {
+                    options.Path = args[i + 1];
+                }
+                else if (args[i].ToLower() == "-t" || args[i].ToLower() == "--type")
+                {
+                    options.LineEndingType = args[i + 1];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            return options;
+        }
+        
+        private static void NormalizeLineEndings(Options opts)
         {
             var watch = new Stopwatch();
             watch.Start();
@@ -36,7 +55,7 @@ namespace Normalize
             }
             if (File.Exists(opts.Path))
             {
-                ConsoleMessage.WriteInfo($"Normalizing file to {opts.LineEndingType} line ending...");
+                ConsoleMessage.WriteInfo($"Normalizing file to {opts.LineEndingType.ToUpper()}...");
                 NormalizeFile(opts.Path, lineEnding);
                 watch.Stop();
                 ConsoleMessage.WriteSuccess($"Normalization finished in {watch.Elapsed.TotalSeconds} sec.");

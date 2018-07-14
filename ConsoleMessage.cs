@@ -6,7 +6,7 @@ namespace Normalize
     {
         public static void WriteInfo(string message)
         {
-            LogMessage(message, ConsoleColor.White);
+            LogMessage(message, ConsoleColor.Gray);
         }
 
         public static void WriteSuccess(string message)

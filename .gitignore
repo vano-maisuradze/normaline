@@ -1,3 +1,5 @@
 .vs
+Properties
+*.user
 bin
 obj
