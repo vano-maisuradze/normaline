@@ -1,6 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Normalize
 {
@@ -19,7 +22,7 @@ namespace Normalize
 
         private static Options ParseArgs(string[] args)
         {
-            if (args == null || args.Length != 4)
+            if (args == null || (args.Length != 4 && args.Length != 6))
             {
                 return null;
             }
@@ -35,6 +38,10 @@ namespace Normalize
                 {
                     options.LineEndingType = args[i + 1];
                 }
+                else if (args[i].ToLower() == "-s" || args[i].ToLower() == "--search")
+                {
+                    options.SearchPattern = args[i + 1];
+                }
                 else
                 {
                     return null;
@@ -42,7 +49,7 @@ namespace Normalize
             }
             return options;
         }
-        
+
         private static void NormalizeLineEndings(Options opts)
         {
             var watch = new Stopwatch();
@@ -63,7 +70,7 @@ namespace Normalize
             else if (Directory.Exists(opts.Path))
             {
                 ConsoleMessage.WriteInfo($"Normalizing directory to {opts.LineEndingType} line ending...");
-                NormalizeDirectory(opts.Path, lineEnding);
+                NormalizeDirectory(opts.Path, opts.SearchPattern, lineEnding);
                 watch.Stop();
                 ConsoleMessage.WriteSuccess($"Normalization finished in {watch.Elapsed.TotalSeconds} sec.");
             }
@@ -74,9 +81,31 @@ namespace Normalize
 
         }
 
-        private static void NormalizeDirectory(string path, string lineEnding)
+        private static void NormalizeDirectory(string path, string searchPattern, string lineEnding)
         {
-            var files = Directory.EnumerateFiles(path);
+            IEnumerable<string> files;
+
+            if (string.IsNullOrEmpty(searchPattern))
+            {
+                files = Directory.EnumerateFiles(path);
+            }
+            else
+            {
+                var regex = new Regex(searchPattern, RegexOptions.IgnoreCase);
+                files = Directory.EnumerateFiles(path, "*").Where(file => regex.IsMatch(Path.GetExtension(file)));
+            }
+
+            var filesCount = files.Count();
+            if (filesCount > 0)
+            {
+                ConsoleMessage.WriteInfo($"{filesCount} files found.");
+            }
+            else
+            {
+                ConsoleMessage.WriteError($"Cannot find files!");
+                return;
+            }
+
             foreach (var file in files)
             {
                 NormalizeFile(file, lineEnding);
